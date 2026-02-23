@@ -1,0 +1,167 @@
+# 🌊 Atlantis Expedition 配置文件
+# 部署位置: ~/.openclaw/fleet.yaml
+# 节点: 腾讯云新加坡
+# 角色: 国际资源访问节点 + 备用计算
+
+fleet:
+  name: "Stargate SGC Expedition Fleet"
+  node_id: atlantis-expedition
+  role: expedition_node
+  location: tencent-cloud-singapore
+  mode: api_only  # 纯API模式
+  
+# 网络配置
+network:
+  bind: 0.0.0.0  # 监听所有接口
+  port: 18789
+  tailscale_ip: 100.64.0.2  # 修改为实际Tailscale IP
+  
+  # 上游节点 (SGC Command)
+  upstream_node:
+    endpoint: http://100.64.0.1:18789  # SGC Command的Tailscale IP
+    token: ${SGC_TOKEN}
+    
+  # 服务发现
+  advertise_capabilities: true
+
+# 模型配置 (纯API模式)
+models:
+  provider: moonshot
+  default: kimi-coding/k2.5
+  fallback: zai/glm-5
+  fast: zai/glm-4.7-flash
+  long_context: kimi-coding/k2.5
+  
+  api_config:
+    timeout: 120
+    retry: 3
+    concurrent: 5
+
+# 本地模型 (禁用)
+ollama:
+  enabled: false
+
+# 专长: 国际资源访问
+international_access:
+  enabled: true
+  
+  services:
+    web_fetch:
+      enabled: true
+      # 访问国际网站更顺畅
+      user_agent: "Mozilla/5.0 (compatible; OpenClaw/1.0)"
+      timeout: 30
+      
+    api_access:
+      enabled: true
+      # 访问国际API
+      endpoints:
+        - openai.com
+        - anthropic.com
+        - huggingface.co
+        - github.com
+        
+    content_download:
+      enabled: true
+      # 下载国际资源
+      max_size: 100MB
+      allowed_types:
+        - application/pdf
+        - text/plain
+        - application/json
+
+# 硬件资源 (轻量节点)
+hardware:
+  cpu:
+    max_threads: 1  # 只有2vCPU，留1给系统
+    
+  memory:
+    max_ram_usage: 1.5GB  # 留500MB给系统
+
+# 任务队列
+queue:
+  enabled: true
+  max_depth: 10
+  timeout: 120
+  
+  priority_levels:
+    - critical: 1
+    - high: 2
+    - normal: 5
+    - low: 10
+
+# 能力声明
+capabilities:
+  - international_access:
+      description: "访问中国大陆以外的资源"
+      
+  - api_inference:
+      provider: moonshot
+      max_context: 262144
+      
+  - backup_compute:
+      description: "SGC故障时的备用计算节点"
+      
+  - web_fetch_international:
+      description: "抓取国际网站内容"
+
+# 文件系统
+filesystem:
+  workspace: ~/.openclaw/workspace
+  temp: /tmp/openclaw
+  max_file_size: 50MB
+  
+  allowed_extensions:
+    - .md
+    - .txt
+    - .json
+    - .html
+
+# 安全设置
+security:
+  auth_mode: token
+  accept_from:
+    - sgc-command  # 主要接受来自SGC的任务
+    
+  sandbox:
+    enabled: true
+    allow_network: true
+    allow_file_write: false  # 只读，不保存敏感数据
+    max_disk_usage: 1GB
+
+# 数据持久化 (云端节点，定期备份)
+persistence:
+  enabled: true
+  backup_interval: 3600  # 1小时备份一次到SGC
+  
+  backup_targets:
+    - sgc-command
+    
+  sync_on_shutdown: true
+
+# 监控
+monitoring:
+  enabled: true
+  
+  metrics:
+    - api_latency
+    - network_quality
+    - task_queue_depth
+    
+  alerts:
+    network_degraded:
+      threshold: 500  # ms
+      action: notify_sgc
+
+# 日志
+logging:
+  level: info
+  file: ~/.openclaw/logs/atlantis-expedition.log
+  max_size: 100MB
+  max_files: 3
+
+# 系统限制
+limits:
+  max_concurrent_sessions: 10
+  max_context_per_session: 262144
+  max_file_upload: 10MB

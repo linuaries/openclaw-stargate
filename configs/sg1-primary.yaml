@@ -1,0 +1,222 @@
+# 🚀 SG-1 Primary 配置文件
+# 部署位置: ~/.openclaw/fleet.yaml
+# 节点: ZD-PC (WSL2) - Xeon + RTX 3060
+# 模式: API模式 (纯云端LLM)
+
+fleet:
+  name: "SGC Expedition Fleet"
+  node_id: sg1-primary
+  role: worker
+  worker_type: heavy_inference
+  location: zd-pc-wsl2
+  mode: api_only  # API模式，不运行本地模型
+  
+# 网络配置
+network:
+  bind: 0.0.0.0  # 监听所有接口，允许SGC访问
+  port: 18789
+  tailscale_ip: 100.64.0.2  # 修改为实际Tailscale IP
+  
+  # 上游节点
+  upstream_node:
+    endpoint: http://100.64.0.1:18789  # SGC Command
+    token: ${SGC_TOKEN}
+    
+  # 服务发现
+  advertise_capabilities: true
+
+# 模型配置 (纯API模式)
+models:
+  # 主要提供商 - 智谱AI
+  provider: zai
+  default: zai/glm-5
+  
+  # 备选提供商 - Moonshot
+  fallback_provider: moonshot
+  fallback: moonshot/k2.5
+  
+  # 快速模型
+  fast: zai/glm-4.7-flash
+  
+  # 长上下文模型
+  long_context: zai/glm-5
+  
+  # 代码专用模型
+  code: zai/glm-5  # GLM-5代码能力优秀
+  
+  api_config:
+    timeout: 120
+    retry: 3
+    concurrent: 10
+
+# 本地模型配置 (禁用)
+ollama:
+  enabled: false
+
+# 模型选择策略
+model_selection:
+  default: zai/glm-5
+  
+  rules:
+    - condition: "task_type == 'code' OR task_type == 'code_review'"
+      model: zai/glm-5
+      reasoning: on
+      
+    - condition: "speed_priority == true"
+      model: zai/glm-4.7-flash
+      
+    - condition: "context_length > 100000"
+      model: zai/glm-5
+      
+    - condition: "complexity == 'high' OR task_type == 'architecture'"
+      model: zai/glm-5
+      reasoning: on
+
+# 硬件资源管理 (用于其他任务，非LLM推理)
+hardware:
+  # GPU可用于嵌入模型或其他本地AI任务
+  gpu:
+    device: nvidia
+    # 可用于本地embedding、图像处理等
+    use_for: [embedding, image_processing, local_ml]
+    
+  cpu:
+    max_threads: 64  # 留8线程给系统
+    # 用于数据处理、编译等
+    
+  memory:
+    max_ram_usage: 56GB  # 留6GB给系统
+    # 用于大文件处理、RAG等
+
+# 任务队列
+queue:
+  enabled: true
+  max_depth: 50
+  timeout: 300  # 5分钟超时
+  
+  priority_levels:
+    - critical: 1
+    - high: 3
+    - normal: 5
+    - low: 10
+
+# 文件系统
+filesystem:
+  workspace: ~/.openclaw/workspace
+  temp: /tmp/openclaw
+  max_file_size: 500MB
+  
+  # 允许处理的大文件类型
+  allowed_extensions:
+    - .md
+    - .txt
+    - .py
+    - .js
+    - .json
+    - .yaml
+    - .pdf
+    - .docx
+
+# RAG配置 (本地embedding + API LLM)
+rag:
+  enabled: true
+  vector_store: faiss
+  # 使用本地embedding模型 (轻量，GPU加速)
+  embedding_model: local/BAAI/bge-large-zh-v1.5
+  
+  # 大内存优势
+  max_document_size: 100MB
+  chunk_size: 1000
+  chunk_overlap: 200
+  top_k: 5
+  
+  # RAG完成后使用API LLM生成回答
+  generation_model: zai/glm-5
+
+# 代码工具 (利用72线程优势)
+code_tools:
+  enabled: true
+  
+  compilation:
+    parallel_jobs: 64
+    timeout: 300
+    
+  languages:
+    python:
+      version: "3.10"
+      venv_path: ~/.venvs
+      
+    nodejs:
+      version: "22"
+      
+    rust:
+      enabled: true
+      
+    cpp:
+      compiler: g++
+      std: c++17
+      
+  # 代码分析和重构使用API LLM
+  analysis_model: zai/glm-5
+
+# 浏览器配置
+browser:
+  enabled: true
+  profile: openclaw
+  headless: true
+  no_sandbox: true
+  
+  # 网页内容抓取后使用API LLM分析
+  analysis_model: zai/glm-5
+
+# 安全设置
+security:
+  auth_mode: token
+  accept_from:
+    - sgc-command  # 只接受来自指挥中心的任务
+    
+  sandbox:
+    enabled: true
+    allow_network: true
+    allow_file_write: true
+    max_disk_usage: 10GB
+
+# API密钥管理
+credentials:
+  # 在 ~/.openclaw/credentials/ 中配置:
+  # - zai.yaml: 智谱AI API key
+  # - moonshot.yaml: Moonshot API key
+  required:
+    - zai
+    - moonshot
+
+# 监控
+monitoring:
+  enabled: true
+  
+  metrics:
+    - api_latency
+    - api_token_usage
+    - cpu_utilization
+    - ram_usage
+    - queue_depth
+    - rag_query_time
+    
+  alerts:
+    api_error_rate:
+      threshold: 10  # 10%错误率告警
+      action: notify_and_switch_provider
+      
+    high_ram:
+      threshold: 90
+      action: notify
+
+# 日志
+logging:
+  level: info
+  file: ~/.openclaw/logs/sg1-primary.log
+  max_size: 500MB
+  max_files: 10
+  
+  # 记录API调用统计
+  log_api_stats: true

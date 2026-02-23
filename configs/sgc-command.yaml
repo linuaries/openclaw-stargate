@@ -1,0 +1,335 @@
+# ⭐ SGC Command 配置文件
+# 部署位置: ~/.openclaw/fleet.yaml
+# 节点: 本地GPU服务器 (ZD-PC)
+# 角色: 指挥中心 + GPU计算中心
+
+fleet:
+  name: "Stargate SGC Expedition Fleet"
+  node_id: sgc-command
+  role: command_center
+  location: zd-pc-wsl2
+  mode: api_with_gpu  # API模式 + GPU本地计算
+  
+# 网络配置
+network:
+  bind: 0.0.0.0  # 监听所有接口，允许其他节点访问
+  port: 18789
+  tailscale_ip: 100.64.0.1  # 修改为实际Tailscale IP
+  
+  # 下游节点配置
+  downstream_nodes:
+    atlantis-expedition:
+      endpoint: http://100.64.0.2:18789  # Atlantis的Tailscale IP
+      token: ${ATLANTIS_TOKEN}
+      enabled: true
+      capabilities:
+        - international_access
+        - api_inference
+        - backup_compute
+        
+    sg2-recon:
+      endpoint: http://100.64.0.3:18789  # SG-2的Tailscale IP
+      token: ${SG2_TOKEN}
+      enabled: true
+      capabilities:
+        - offline_mode
+        - portable
+        - lightweight_inference
+
+# 模型配置 (纯API模式)
+models:
+  provider: zai
+  default: zai/glm-5
+  fallback: moonshot/k2.5
+  fast: zai/glm-4.7-flash
+  code: zai/glm-5
+  
+  api_config:
+    timeout: 120
+    retry: 3
+    concurrent: 10
+
+# 本地模型配置 (禁用大模型，保留轻量功能)
+ollama:
+  enabled: false  # 不运行大模型，纯API模式
+
+# GPU计算配置 (用于非LLM任务)
+gpu_compute:
+  enabled: true
+  device: nvidia
+  
+  services:
+    image_processing:
+      enabled: true
+      models:
+        - stable-diffusion-xl  # 图像生成
+        - controlnet          # 图像控制
+      
+    audio_processing:
+      enabled: true
+      models:
+        - whisper-large-v3    # 语音识别
+        - bark                # 语音合成
+      
+    embedding:
+      enabled: true
+      model: BAAI/bge-large-zh-v1.5
+      device: cuda
+      
+    local_ml:
+      enabled: true
+      tasks:
+        - classification
+        - object_detection
+
+# 硬件资源管理
+hardware:
+  cpu:
+    max_threads: 64  # 留8线程给系统
+    
+  gpu:
+    device: nvidia
+    max_vram_usage: 11000  # 留1GB给系统
+    
+  memory:
+    max_ram_usage: 56GB  # 留6GB给系统
+
+# 任务队列
+queue:
+  enabled: true
+  max_depth: 50
+  timeout: 300
+  
+  priority_levels:
+    - critical: 1
+    - high: 3
+    - normal: 5
+    - low: 10
+
+# 任务路由规则
+routing:
+  default_target: self
+  
+  rules:
+    # GPU计算任务 - 本地处理
+    - name: gpu_compute
+      condition: "task_type == 'image_processing' OR task_type == 'audio_processing'"
+      target: self
+      priority: 1
+      
+    # 代码生成 - 本地处理 (GLM-5 + 72线程)
+    - name: code_generation
+      condition: "task_type == 'code'"
+      target: self
+      priority: 2
+      
+    # 长文档分析 - 本地处理 (大内存优势)
+    - name: long_document
+      condition: "doc_size > 10000 OR task_type == 'rag'"
+      target: self
+      priority: 2
+      
+    # 国际资源访问 - Atlantis
+    - name: international_access
+      condition: "resource_location == 'international' OR task_type == 'web_fetch_international'"
+      target: atlantis-expedition
+      priority: 3
+      
+    # 简单问答 - 本地处理
+    - name: simple_chat
+      condition: "task_type == 'chat' AND complexity == 'low'"
+      target: self
+      priority: 5
+      
+    # 离线任务 - SG-2
+    - name: offline_mode
+      condition: "offline == true OR source_node == 'sg2-recon'"
+      target: sg2-recon
+      priority: 6
+
+# 文件系统
+filesystem:
+  workspace: ~/.openclaw/workspace
+  temp: /tmp/openclaw
+  max_file_size: 500MB
+  
+  # 允许处理的大文件类型
+  allowed_extensions:
+    - .md
+    - .txt
+    - .py
+    - .js
+    - .json
+    - .yaml
+    - .pdf
+    - .docx
+    - .png
+    - .jpg
+    - .wav
+    - .mp3
+
+# RAG配置 (本地embedding + API生成)
+rag:
+  enabled: true
+  vector_store: fais
+  embedding_model: local/BAAI/bge-large-zh-v1.5
+  max_document_size: 100MB
+  chunk_size: 1000
+  chunk_overlap: 200
+  top_k: 5
+  generation_model: zai/glm-5
+
+# 代码工具
+code_tools:
+  enabled: true
+  
+  compilation:
+    parallel_jobs: 64
+    timeout: 300
+    
+  languages:
+    python:
+      version: "3.10"
+      venv_path: ~/.venvs
+      
+    nodejs:
+      version: "22"
+      
+    rust:
+      enabled: true
+      
+    cpp:
+      compiler: g++
+      std: c++17
+
+# 浏览器配置
+browser:
+  enabled: true
+  profile: openclaw
+  headless: true
+  no_sandbox: true
+
+# 通道配置 (主要入口)
+channels:
+  qqbot:
+    enabled: true
+    account_id: default
+    
+  discord:
+    enabled: true
+    
+  telegram:
+    enabled: false
+    
+  whatsapp:
+    enabled: false
+
+# 全局记忆配置
+memory:
+  type: filesystem
+  path: ~/.openclaw/memory
+  sync_interval: 300
+  
+  sync_files:
+    - MEMORY.md
+    - AGENTS.md
+    - USER.md
+    - SOUL.md
+
+# 安全设置
+security:
+  auth_mode: token
+  token_rotation: 86400
+  
+  allowed_tools:
+    - sessions_spawn
+    - sessions_send
+    - memory_search
+    - memory_get
+    
+  confirm_operations:
+    - file_delete
+    - exec_shell
+    - gateway_restart
+
+# 监控与日志
+monitoring:
+  enabled: true
+  heartbeat_interval: 60
+  node_timeout: 300
+  
+  metrics:
+    - api_latency
+    - api_token_usage
+    - cpu_utilization
+    - ram_usage
+    - gpu_utilization
+    - queue_depth
+    
+logging:
+  level: info
+  file: ~/.openclaw/logs/sgc-command.log
+  max_size: 500MB
+  max_files: 10
+
+# 系统限制
+limits:
+  max_concurrent_sessions: 50
+  max_context_per_session: 262144
+  max_file_upload: 100MB
+
+# 🌟 SG-1 Team 集成
+sg1_team:
+  enabled: true
+  config_path: ~/.openclaw/agents/sg1-team.yaml
+  
+  # SG-1小队作为子Agent
+  sub_agents:
+    - id: sg1-oneill
+      name: "Jack O'Neill"
+      role: team_leader
+      model: zai/glm-5
+      specialty: routing_coordination
+      
+    - id: sg1-jackson
+      name: "Daniel Jackson"
+      role: knowledge_expert
+      model: zai/glm-5
+      specialty: document_research
+      hardware_affinity: large_memory
+      
+    - id: sg1-carter
+      name: "Samantha Carter"
+      role: technical_expert
+      model: zai/glm-5
+      specialty: code_engineering
+      hardware_affinity: [multi_thread, gpu_compute]
+      
+    - id: sg1-tealc
+      name: "Teal'c"
+      role: security_expert
+      model: zai/glm-5
+      specialty: security_review
+      
+  # 任务自动路由到SG-1成员
+  auto_route_to_sg1: true
+  
+  # 触发SG-1路由的任务类型
+  sg1_task_types:
+    - code_generation     # -> Carter
+    - document_analysis   # -> Jackson
+    - security_review     # -> Teal'c
+    - research            # -> Jackson
+    - system_design       # -> Carter
+    - code_review         # -> Teal'c
+    
+  # 召唤关键词
+  invocation_keywords:
+    "@jack": sg1-oneill
+    "@oneill": sg1-oneill
+    "@daniel": sg1-jackson
+    "@jackson": sg1-jackson
+    "@sam": sg1-carter
+    "@carter": sg1-carter
+    "@tealc": sg1-tealc
+    "@sg1": team_mode

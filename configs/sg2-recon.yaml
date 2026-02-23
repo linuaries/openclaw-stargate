@@ -1,0 +1,239 @@
+# 🔭 SG-2 Recon 配置文件
+# 部署位置: ~/.openclaw/fleet.yaml
+# 节点: GPD MicroPC2 (DESKTOP-1156LM3)
+
+fleet:
+  name: "SGC Expedition Fleet"
+  node_id: sg2-recon
+  role: worker
+  worker_type: mobile_recon
+  location: gpd-micropc2
+  
+# 网络配置
+network:
+  bind: 0.0.0.0
+  port: 18789
+  tailscale_ip: 100.64.0.3  # 修改为实际IP
+  
+  upstream_node:
+    endpoint: http://100.64.0.1:18789  # SGC Command
+    token: ${SGC_TOKEN}
+    
+  # 离线模式检测
+  offline_detection:
+    enabled: true
+    check_interval: 30
+    timeout: 10
+    retries: 3
+
+# 本地模型配置 (轻量版Ollama)
+ollama:
+  enabled: true
+  host: http://localhost:11434
+  
+  models:
+    # 超轻量 - 3.8B Phi-3
+    ultralight:
+      name: phi3:mini
+      alias: local-ultralight
+      size: "~2GB"
+      ram: 2048
+      max_context: 4096
+      use_case: "基本对话、离线使用"
+      
+    # 中文优化 - 1.8B Qwen
+    mobile:
+      name: qwen2.5:1.8b
+      alias: local-mobile
+      size: "~1.5GB"
+      ram: 1536
+      max_context: 8192
+      use_case: "中文任务、轻量推理"
+      
+    # 极低资源 - 1.1B TinyLlama
+    emergency:
+      name: tinyllama:1.1b
+      alias: local-emergency
+      size: "~600MB"
+      ram: 600
+      max_context: 2048
+      use_case: "紧急备用、极低内存"
+
+# 模型选择策略
+model_selection:
+  default: local-mobile  # 中文优先
+  
+  rules:
+    - condition: "available_ram < 3GB"
+      model: local-emergency
+      
+    - condition: "language == 'english' AND complexity == 'low'"
+      model: local-ultralight
+      
+    - condition: "offline == true"
+      model: local-mobile
+
+# API备用
+models:
+  provider: minimax-cn
+  default: minimax-cn/MiniMax-M2.5
+  fallback: zai/glm-4.7
+  api_fallback: true
+  
+  # 网络不可用时自动切换本地
+  auto_offline_switch: true
+
+# 硬件资源管理 (严格限制)
+hardware:
+  cpu:
+    max_threads: 3  # 留1线程给系统
+    thermal_throttle: true
+    
+  memory:
+    max_ram_usage: 6GB  # 留1.6GB给系统
+    swap_warning: 90
+    
+  # 无GPU，纯CPU推理
+  gpu:
+    enabled: false
+
+# 电源管理 (移动设备)
+power:
+  battery_aware: true
+  
+  profiles:
+    ac_power:
+      max_threads: 3
+      active_models: all
+      
+    battery_high:
+      max_threads: 2
+      active_models: [local-mobile, local-emergency]
+      
+    battery_low:
+      max_threads: 1
+      active_models: [local-emergency]
+      disable_browser: true
+      
+    battery_critical:
+      mode: sleep
+      wake_on_message: true
+
+# 任务队列
+queue:
+  enabled: true
+  max_depth: 10  # 小队列
+  timeout: 120   # 2分钟超时
+  
+  # 轻量任务限制
+  max_tokens_per_task: 8000
+  max_context_length: 8192
+
+# 文件系统
+filesystem:
+  workspace: ~/.openclaw/workspace
+  temp: /tmp/openclaw
+  max_file_size: 50MB
+  
+  # 限制文件类型
+  allowed_extensions:
+    - .md
+    - .txt
+    - .py
+    - .json
+    - .yaml
+
+# 浏览器配置 (GPD上有Chromium)
+browser:
+  enabled: true
+  profile: openclaw
+  headless: true
+  no_sandbox: true
+  
+  # 移动场景下的自动化
+  use_cases:
+    - web_fetch
+    - form_filling
+    - screenshot
+
+# 离线模式
+offline:
+  enabled: true
+  
+  # 离线时可用的功能
+  capabilities:
+    - local_chat
+    - file_read
+    - file_write
+    - code_edit
+    - basic_search (本地文件)
+    
+  # 离线时不可用的功能
+  disabled_capabilities:
+    - web_search
+    - web_fetch
+    - api_models
+    - sessions_spawn (外部节点)
+  
+  # 网络恢复后同步
+  sync_on_reconnect:
+    - memory_updates
+    - task_queue_status
+    - metrics
+
+# 便携特性
+portable:
+  quick_start: true
+  suspend_on_lid_close: true
+  resume_on_lid_open: true
+  
+  # 快速唤醒配置
+  keep_alive_models:
+    - local-mobile  # 保持小模型常驻内存
+    
+  hot_standby_timeout: 300  # 5分钟无任务进入待机
+
+# 安全设置
+security:
+  auth_mode: token
+  accept_from:
+    - sgc-command
+    - self  # 允许本地直接访问
+    
+  # 移动设备额外安全
+  auto_lock:
+    enabled: false  # 可自行启用
+    timeout: 300
+    
+  encryption:
+    memory_files: false  # 性能考虑
+    credentials: true
+
+# 监控 (轻量)
+monitoring:
+  enabled: true
+  
+  metrics:
+    - cpu_utilization
+    - ram_usage
+    - battery_level
+    - network_status
+    
+  alerts:
+    low_battery:
+      threshold: 20
+      action: notify_and_throttle
+      
+    high_temp:
+      threshold: 80
+      action: throttle
+
+# 日志
+logging:
+  level: info
+  file: ~/.openclaw/logs/sg2-recon.log
+  max_size: 100MB
+  max_files: 3
+  
+  # 移动场景日志压缩
+  compress_old: true

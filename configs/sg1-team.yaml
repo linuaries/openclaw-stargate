@@ -1,0 +1,166 @@
+# 🌟 SG-1 Team - 完整小队配置
+# 部署位置: SGC Command (本地GPU服务器)
+# 说明: SG-1小队作为SGC Command的下属专业Agent团队
+
+fleet:
+  name: "Stargate SG-1 Team"
+  parent_node: sgc-command
+  location: zd-pc-wsl2
+  
+# SG-1小队成员
+team_members:
+  jack_oneill:
+    id: sg1-oneill
+    config: agents/sg1-oneill.yaml
+    role: team_leader
+    status: active
+    
+  daniel_jackson:
+    id: sg1-jackson
+    config: agents/sg1-jackson.yaml
+    role: knowledge_expert
+    status: active
+    
+  samantha_carter:
+    id: sg1-carter
+    config: agents/sg1-carter.yaml
+    role: technical_expert
+    status: active
+    
+  teal_c:
+    id: sg1-tealc
+    config: agents/sg1-tealc.yaml
+    role: security_expert
+    status: active
+
+# 任务路由矩阵
+# O'Neill作为领队接收任务，分派给 appropriate 队员
+team_routing:
+  entry_point: sg1-oneill  # 所有任务先由O'Neill评估
+  
+  routing_matrix:
+    # 文档/知识任务 -> Jackson
+    knowledge_tasks:
+      agent: sg1-jackson
+      triggers:
+        - document_analysis
+        - translation
+        - research
+        - cultural_context
+        - historical_knowledge
+        - long_document_processing
+        
+    # 技术/代码任务 -> Carter
+    technical_tasks:
+      agent: sg1-carter
+      triggers:
+        - code_generation
+        - system_design
+        - debugging
+        - optimization
+        - scientific_computing
+        - engineering
+        
+    # 安全/审查任务 -> Teal'c
+    security_tasks:
+      agent: sg1-tealc
+      triggers:
+        - code_review
+        - security_audit
+        - vulnerability_assessment
+        - quality_assurance
+        - final_verification
+        
+    # 其他/简单任务 -> O'Neill自己处理
+    general_tasks:
+      agent: sg1-oneill
+      triggers:
+        - simple_chat
+        - strategic_advice
+        - task_coordination
+        - fallback
+
+# 团队协作模式
+collaboration_modes:
+  # 单人模式: 单个Agent处理
+  solo:
+    description: "单个队员独立处理"
+    use_when: "任务明确，适合单一专长"
+    
+  # 双人模式: 两个Agent协作
+  duo:
+    description: "两个队员协作"
+    patterns:
+      - carter_tealc:      # 技术+安全
+          for: "系统开发 + 安全审查"
+      - jackson_carter:    # 知识+技术
+          for: "技术文档 + 实现"
+      - oneill_any:        # 领队+专家
+          for: "战略指导 + 执行"
+          
+  # 全队模式: 全体出动
+  full_team:
+    description: "完整SG-1小队协作"
+    workflow:
+      1: jackson    # 研究背景
+      2: carter     # 技术实现
+      3: tealc      # 安全审查
+      4: oneill     # 最终决策
+    use_when: "复杂项目，需要全方位能力"
+
+# 沟通协议
+communication_protocol:
+  internal_channel: sg1-internal
+  
+  message_format:
+    from: agent_id
+    to: agent_id | team
+    type: [task_assignment, question, report, alert]
+    priority: [low, normal, high, critical]
+    
+  catchphrases:
+    oneill: "Alright kids, mission briefing."
+    jackson: "Fascinating! I've found..."
+    carter: "Theoretically, we could..."
+    tealc: "Indeed. I shall begin."
+
+# 状态监控
+team_monitoring:
+  track_per_agent:
+    - tasks_completed
+    - success_rate
+    - average_response_time
+    - collaboration_frequency
+    
+  team_metrics:
+    - overall_throughput
+    - task_distribution_balance
+    - handoff_efficiency
+    - user_satisfaction
+
+# 故障转移
+if_agent_unavailable:
+  sg1-oneill:     carter     # Carter takes command
+  sg1-jackson:    oneill     # O'Neill uses general knowledge
+  sg1-carter:     oneill     # O'Neill escalates to external
+  sg1-tealc:      carter     # Carter does basic review
+
+# 用户交互界面
+user_interface:
+  # 用户可以通过名字调用特定队员
+  direct_invocation:
+    - "@jack" or "@oneill" -> sg1-oneill
+    - "@daniel" or "@jackson" -> sg1-jackson
+    - "@sam" or "@carter" -> sg1-carter
+    - "@tealc" -> sg1-tealc
+    - "@sg1" -> team_mode (全队)
+    
+  # 或者由O'Neill自动分配
+  auto_assign: true
+  
+  # 任务描述关键词触发
+  keyword_routing:
+    - "分析文档" -> jackson
+    - "写代码" -> carter
+    - "检查安全" -> tealc
+    - "怎么办" -> oneill

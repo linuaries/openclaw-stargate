@@ -7,31 +7,34 @@
 ## 🗺️ 架构概览 (更新版)
 
 ```
-                            🌐 Internet
+                            🌐 Internet + API
                                │
           ┌────────────────────┼────────────────────┐
           │                    │                    │
     ┌─────▼──────┐    ┌───────▼────────┐    ┌──────▼──────┐
     │   ⭐SGC     │    │  🌊 Atlantis   │    │   🔭SG-2    │
-    │  Command   │◄──►│  Expedition    │    │   Recon     │
-    │ 本地GPU    │ VPN │  腾讯云新加坡   │    │ GPD Micro   │
-    │ Xeon+3060  │     │  2vCPU/2GB     │    │ N250+7.6G   │
+    │  Command   │◄──►│  Expedition    │◄──►│   Recon     │
+    │ 本地GPU    │ VPN │  腾讯云新加坡   │ VPN │ GPD Micro   │
+    │ Xeon+3060  │     │  2vCPU/2GB     │     │ N250+7.6G   │
     └─────┬──────┘    └────────────────┘    └──────┬──────┘
           │                                         │
     ┌─────▼──────┐                            ┌─────▼──────┐
-    │QQ/Discord  │                            │ 离线模式   │
+    │QQ/Discord  │                            │ 便携移动   │
+    │ GPU计算    │                            │ API推理    │
     └────────────┘                            └────────────┘
+    
+    模式: API + GPU       模式: API          模式: API
 ```
 
 ---
 
 ## 🎭 舰队成员
 
-| 代号 | 主机名 | 位置 | 硬件 | 角色 | Provider |
-|------|--------|------|------|------|----------|
-| **⭐SGC Command** | ZD-PC | 本地WSL2工作站 | Xeon 72T + RTX 3060 12GB + 62GB | **指挥中心** + GPU计算 | zai/glm-5, moonshot/k2.5 |
-| **🌊Atlantis Expedition** | VM-0-2-opencloudos | 腾讯云新加坡 | 2vCPU/2GB | **国际资源访问节点** | kimi-coding/k2.5 |
-| **🔭SG-2 Recon** | DESKTOP-1156LM3 | GPD MicroPC2 | N250 4C/4T + 7.6GB | 移动侦察 | minimax-cn/MiniMax-M2.5 |
+| 代号 | 主机名 | 位置 | 硬件 | 角色 | 模式 | Provider |
+|------|--------|------|------|------|------|----------|
+| **⭐SGC Command** | ZD-PC | 本地WSL2工作站 | Xeon 72T + RTX 3060 12GB + 62GB | **指挥中心** + GPU计算 | API + GPU | zai/glm-5, moonshot/k2.5 |
+| **🌊Atlantis Expedition** | VM-0-2-opencloudos | 腾讯云新加坡 | 2vCPU/2GB | **国际资源访问节点** | API | kimi-coding/k2.5 |
+| **🔭SG-2 Recon** | DESKTOP-1156LM3 | GPD MicroPC2 | N250 4C/4T + 7.6GB | 移动侦察 | API | zai/glm-5, moonshot/k2.5 |
 
 ---
 
@@ -56,8 +59,9 @@
 
 ### 🔭 SG-2 Recon（GPD MicroPC2）
 - **位置**: 移动便携
-- **职责**: 移动侦察、离线任务
-- **优势**: 便携、可离线工作
+- **职责**: 移动侦察、离线任务准备
+- **模式**: 纯API推理（硬件不足以支持本地模型）
+- **优势**: 便携、可离线准备任务
 
 ---
 
@@ -98,13 +102,13 @@ stargate/
 SGC Command 和 Atlantis 都使用 **API模式**。
 
 ```bash
-# 仅在 SG-2 Recon 执行 (用于离线模式)
-./scripts/install-ollama.sh --profile=recon
+# 注意: 所有节点均使用API推理，无需安装本地模型
+# SG-2 Recon 硬件不足以运行本地Ollama，已改为纯API模式
 ```
 
-### 3. 配置 API 密钥
+### 2. 配置 API 密钥
 
-在 **SGC Command** 和 **Atlantis** 上配置 API：
+在 **所有节点** 上配置 API：
 
 ```bash
 # 配置智谱AI
@@ -144,8 +148,8 @@ cp configs/sg2-recon.yaml ~/.openclaw/fleet.yaml
 | **Embedding** | **⭐SGC Command** | **本地GPU + 大内存** |
 | **代码生成** | **⭐SGC Command** | GLM-5 + 72线程编译 |
 | **国际资源访问** | **🌊Atlantis** | 海外网络优势 |
-| **简单问答** | SGC/Atlantis | API低延迟 |
-| **离线任务** | 🔭SG-2 Recon | 本地Phi-3/Qwen1.8B |
+| **简单问答** | SGC/Atlantis/SG-2 | API低延迟 |
+| **移动场景** | 🔭SG-2 Recon | 便携设备，API推理 |
 
 ---
 

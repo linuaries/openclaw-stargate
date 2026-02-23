@@ -1,6 +1,7 @@
 # 🔭 SG-2 Recon 配置文件
 # 部署位置: ~/.openclaw/fleet.yaml
 # 节点: GPD MicroPC2 (DESKTOP-1156LM3)
+# 模式: 纯API推理 (硬件不足以支持本地Ollama)
 
 fleet:
   name: "SGC Expedition Fleet"
@@ -8,6 +9,7 @@ fleet:
   role: worker
   worker_type: mobile_recon
   location: gpd-micropc2
+  mode: api_only  # 纯API模式
   
 # 网络配置
 network:
@@ -25,65 +27,59 @@ network:
     check_interval: 30
     timeout: 10
     retries: 3
+    
+  # 网络状态监控
+  connectivity_check:
+    enabled: true
+    targets:
+      - https://api.openai.com
+      - https://api.deepseek.com
+      - http://100.64.0.1:18789  # SGC Command
 
-# 本地模型配置 (轻量版Ollama)
+# 本地模型配置 (禁用 - 硬件不足)
 ollama:
-  enabled: true
-  host: http://localhost:11434
-  
-  models:
-    # 超轻量 - 3.8B Phi-3
-    ultralight:
-      name: phi3:mini
-      alias: local-ultralight
-      size: "~2GB"
-      ram: 2048
-      max_context: 4096
-      use_case: "基本对话、离线使用"
-      
-    # 中文优化 - 1.8B Qwen
-    mobile:
-      name: qwen2.5:1.8b
-      alias: local-mobile
-      size: "~1.5GB"
-      ram: 1536
-      max_context: 8192
-      use_case: "中文任务、轻量推理"
-      
-    # 极低资源 - 1.1B TinyLlama
-    emergency:
-      name: tinyllama:1.1b
-      alias: local-emergency
-      size: "~600MB"
-      ram: 600
-      max_context: 2048
-      use_case: "紧急备用、极低内存"
+  enabled: false
+  reason: "GPD MicroPC2 硬件不足以运行本地模型"
 
-# 模型选择策略
+# API 模型配置 (主要推理方式)
+models:
+  provider: zai
+  default: zai/glm-5
+  fallback: moonshot/k2.5
+  fast: zai/glm-4.7-flash
+  
+  # API 配置
+  api_config:
+    timeout: 120
+    retry: 3
+    concurrent: 3  # 限制并发数
+    
+  # 网络不可用时的降级策略
+  offline_strategy:
+    enabled: true
+    action: queue_and_retry  # 排队等待网络恢复
+    max_wait: 300  # 最多等待5分钟
+    notify_user: true
+
+# 模型选择策略 (纯API)
 model_selection:
-  default: local-mobile  # 中文优先
+  default: zai/glm-5
   
   rules:
-    - condition: "available_ram < 3GB"
-      model: local-emergency
+    - condition: "complexity == 'low'"
+      model: zai/glm-4.7-flash
       
-    - condition: "language == 'english' AND complexity == 'low'"
-      model: local-ultralight
+    - condition: "language == 'chinese'"
+      model: zai/glm-5
+      
+    - condition: "task_type == 'code'"
+      model: zai/glm-5
       
     - condition: "offline == true"
-      model: local-mobile
+      action: queue_and_notify
+      message: "网络不可用，任务已排队等待恢复"
 
-# API备用
-models:
-  provider: minimax-cn
-  default: minimax-cn/MiniMax-M2.5
-  fallback: zai/glm-4.7
-  api_fallback: true
-  
-  # 网络不可用时自动切换本地
-  auto_offline_switch: true
-
-# 硬件资源管理 (严格限制)
+# 硬件资源管理 (GPD MicroPC2)
 hardware:
   cpu:
     max_threads: 3  # 留1线程给系统
@@ -93,9 +89,12 @@ hardware:
     max_ram_usage: 6GB  # 留1.6GB给系统
     swap_warning: 90
     
-  # 无GPU，纯CPU推理
+  # 无GPU
   gpu:
     enabled: false
+    
+  # 无本地模型，内存主要用于系统和其他应用
+  no_local_models: true
 
 # 电源管理 (移动设备)
 power:
@@ -103,20 +102,21 @@ power:
   
   profiles:
     ac_power:
-      max_threads: 3
-      active_models: all
+      api_timeout: 120
+      retry_count: 3
       
     battery_high:
-      max_threads: 2
-      active_models: [local-mobile, local-emergency]
+      api_timeout: 90
+      retry_count: 2
       
     battery_low:
-      max_threads: 1
-      active_models: [local-emergency]
+      api_timeout: 60
+      retry_count: 1
       disable_browser: true
       
     battery_critical:
-      mode: sleep
+      mode: minimal
+      api_timeout: 30
       wake_on_message: true
 
 # 任务队列
@@ -125,9 +125,11 @@ queue:
   max_depth: 10  # 小队列
   timeout: 120   # 2分钟超时
   
-  # 轻量任务限制
-  max_tokens_per_task: 8000
-  max_context_length: 8192
+  # 离线时任务处理
+  offline_handling:
+    action: queue
+    max_queue_size: 20
+    auto_retry_on_reconnect: true
 
 # 文件系统
 filesystem:
@@ -156,30 +158,31 @@ browser:
     - form_filling
     - screenshot
 
-# 离线模式
+# 离线模式 (纯API下的离线能力)
 offline:
   enabled: true
   
-  # 离线时可用的功能
+  # 离线时可用的功能 (纯本地操作)
   capabilities:
-    - local_chat
     - file_read
     - file_write
     - code_edit
     - basic_search (本地文件)
+    - local_shell_commands
     
   # 离线时不可用的功能
   disabled_capabilities:
     - web_search
     - web_fetch
     - api_models
+    - llm_inference
     - sessions_spawn (外部节点)
   
-  # 网络恢复后同步
+  # 网络恢复后自动处理
   sync_on_reconnect:
-    - memory_updates
-    - task_queue_status
-    - metrics
+    - process_queued_tasks
+    - sync_memory
+    - notify_user
 
 # 便携特性
 portable:
@@ -188,9 +191,8 @@ portable:
   resume_on_lid_open: true
   
   # 快速唤醒配置
-  keep_alive_models:
-    - local-mobile  # 保持小模型常驻内存
-    
+  keep_warm: false  # 无本地模型，无需预热
+  
   hot_standby_timeout: 300  # 5分钟无任务进入待机
 
 # 安全设置
@@ -218,6 +220,8 @@ monitoring:
     - ram_usage
     - battery_level
     - network_status
+    - api_latency
+    - queue_depth
     
   alerts:
     low_battery:
@@ -227,6 +231,10 @@ monitoring:
     high_temp:
       threshold: 80
       action: throttle
+      
+    network_down:
+      action: queue_tasks
+      notify: true
 
 # 日志
 logging:
@@ -237,3 +245,12 @@ logging:
   
   # 移动场景日志压缩
   compress_old: true
+
+# GPD MicroPC2 硬件规格参考
+# CPU: AMD Ryzen 7 8840HS (8核，但此节点限制3线程)
+# RAM: 8GB (6GB可用)
+# GPU: AMD Radeon 780M (不用于推理)
+# 存储: 512GB SSD
+# 网络: WiFi 6 + Tailscale VPN
+# 
+# 注意: 此节点使用纯API推理，不支持本地模型运行

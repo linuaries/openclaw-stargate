@@ -1,0 +1,177 @@
+# 🚀 SG1 Multi-Gateway Configuration
+# Based on OpenClaw multi-agent best practices
+# Reference: https://mp.weixin.qq.com/s/YzLpTPUVV3OpD-qyx6hIbw
+
+# Gateway Architecture:
+# ┌─────────────────────────────────────────────────────────────────┐
+# │                    SGC Command (GPU Workstation)                │
+# │                         IP: 116.147.146.109                     │
+# ├─────────────────────────────────────────────────────────────────┤
+# │                                                                  │
+# │  Discord Bot ────► Gateway #1 (profile: oneill) ───► O'Neill   │
+# │  Discord Bot ────► Gateway #2 (profile: carter) ───► Carter    │
+# │  Discord Bot ────► Gateway #3 (profile: jackson) ──► Jackson   │
+# │  Discord Bot ────► Gateway #4 (profile: tealc) ────► Teal'C    │
+# │                                                                  │
+# │  Each Gateway:                                                  │
+# │  • Separate config directory (~/.openclaw-<profile>/)          │
+# │  • Separate port                                               │
+# │  • Isolated sessions and memory                                │
+# │  • Independent restart capability                              │
+# │                                                                  │
+# └─────────────────────────────────────────────────────────────────┘
+
+gateways:
+  # 🎖️ Jack O'Neill - Team Leader
+  oneill:
+    profile: oneill
+    port: 18789
+    agent: sg1-oneill
+    role: "Team Leader / Coordinator"
+    workspace: ~/.openclaw/workspace
+    description: |
+      Mission planning, task coordination, strategic decisions.
+      Handles complex task decomposition and cross-domain integration.
+    model_preferences:
+      primary: "Strong reasoning model"
+      characteristics:
+        - "High thinking intensity"
+        - "Allows long context"
+        - "Allows slow responses"
+    responsibilities:
+      - "Complex task decomposition"
+      - "Decision making"
+      - "Strategic planning"
+      - "Cross-domain integration"
+    key_constraints:
+      - "Conclusions first"
+      - "Risks clearly stated"
+      - "Next steps actionable"
+
+  # 🔬 Samantha Carter - Developer/Engineer
+  carter:
+    profile: carter
+    port: 18790
+    agent: sg1-carter
+    role: "Developer / Engineer"
+    workspace: ~/.openclaw/workspace-developer
+    description: |
+      Code generation, debugging, technical implementation.
+      Ensures reproducibility and engineering quality.
+    model_preferences:
+      primary: "Reasoning + Executable"
+      characteristics:
+        - "Strong coding ability"
+        - "Precise technical output"
+    responsibilities:
+      - "Code implementation"
+      - "Script development"
+      - "Troubleshooting"
+      - "Technical documentation"
+    key_constraints:
+      - "Must be reproducible"
+      - "Must be runnable"
+      - "Edge cases covered"
+
+  # 📚 Daniel Jackson - Writer/Researcher
+  jackson:
+    profile: jackson
+    port: 18791
+    agent: sg1-jackson
+    role: "Writer / Researcher"
+    workspace: ~/.openclaw/workspace-writer
+    description: |
+      Content creation, research, documentation.
+      Handles blog posts, presentations, and academic articles.
+    model_preferences:
+      primary: "Writing-friendly model"
+      characteristics:
+        - "Stable output"
+        - "Moderate cost"
+    responsibilities:
+      - "Article/blog writing"
+      - "Research synthesis"
+      - "Presentation creation"
+      - "Documentation"
+    key_constraints:
+      - "Output must be publishable"
+      - "Clear and accessible language"
+
+  # 🛡️ Teal'C - Security Specialist
+  tealc:
+    profile: tealc
+    port: 18792
+    agent: sg1-tealc
+    role: "Security Specialist / QA"
+    workspace: ~/.openclaw/workspace-security
+    description: |
+      Security audits, compliance checks, quality assurance.
+      Ensures all deliverables meet security and quality standards.
+    model_preferences:
+      primary: "Conservative, precise"
+      characteristics:
+        - "Low temperature"
+        - "Thorough analysis"
+    responsibilities:
+      - "Security vulnerability scanning"
+      - "Compliance verification"
+      - "Code review"
+      - "Quality assurance"
+    key_constraints:
+      - "Comprehensive coverage"
+      - "No false positives ignored"
+      - "Formal reporting"
+
+# Profile Isolation Details
+# Each profile creates complete isolation:
+# ├── Config: ~/.openclaw-<profile>/openclaw.json
+# ├── State: ~/.openclaw-<profile>/
+# ├── Port: Separate port per instance
+# └── Sessions: Fully isolated context
+
+# Resource Requirements (per article)
+resources:
+  memory_per_gateway: "400MB"
+  total_4_gateways: "1.6GB"
+  cpu_idle: "Nearly 0"
+  disk_overhead: "~100MB"
+
+# Cost Strategy
+cost_optimization:
+  high_value_tasks:
+    - "Use O'Neill (strongest model) only for complex decisions"
+    - "Route writing tasks to Jackson (cost-effective)"
+    - "Keep Carter focused on technical work"
+    - "Use Teal'C for final verification"
+
+# Maintenance Schedule
+maintenance:
+  daily:
+    - "Check gateway status"
+    - "Monitor for hangs/disconnections"
+  
+  weekly:
+    - "Review model/usage costs"
+    - "Check if O'Neill being used for trivial tasks"
+  
+  biweekly:
+    - "Review prompts for context pollution"
+    - "Tighten SOUL/USER constraints if needed"
+
+# Troubleshooting Quick Reference
+troubleshooting:
+  context_pollution:
+    symptom: "Agent starts talking outside its role"
+    solution: "Review and tighten SOUL.md constraints"
+  
+  gateway_hang:
+    symptom: "No response, gateway appears stuck"
+    solution: "Restart individual gateway, check logs"
+  
+  token_mismatch:
+    symptom: "Gateway fails to start"
+    solution: "Verify correct bot token in profile config"
+  
+  port_conflict:
+    symptom: "Port already in use error"
+    solution: "Check with 'lsof -i :<port>' and kill process"

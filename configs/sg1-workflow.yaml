@@ -1,0 +1,441 @@
+# 🔄 SG1 Team Workflow Configuration
+# Maps workflow steps to agents and resources
+
+workflow:
+  name: "sg1-standard-workflow"
+  version: "1.0.0"
+  description: "Standard 6-step workflow for AI research and development"
+
+# Workflow Steps Definition
+steps:
+  step_1_research:
+    name: "Research & Discovery"
+    owner: sg1-jackson
+    coordinator: sg1-oneill
+    duration_days: [1, 2]
+    
+    focus_areas:
+      - "Generative AI (LLMs, Diffusion Models)"
+      - "Computer Vision (Detection, Segmentation, 3D)"
+      - "Agentic Applications (Multi-agent, Tool use)"
+      - "CUDA-based Applications (GPU acceleration)"
+    
+    sources:
+      blogs:
+        - "https://huggingface.co/blog"
+        - "https://blog.google/technology/ai/"
+        - "https://openai.com/blog"
+        - "https://www.anthropic.com/research"
+      
+      repos:
+        - "GitHub Trending: AI/ML topics"
+        - "Papers with Code"
+      
+      papers:
+        - "arXiv cs.AI"
+        - "arXiv cs.CV"
+        - "arXiv cs.CL"
+        - "arXiv cs.LG"
+    
+    outputs:
+      - "Research summary document"
+      - "Priority ranking of repos"
+      - "Feasibility assessment"
+    
+    tools:
+      - web_search
+      - web_fetch
+      - memory_search
+      - memory_get
+
+  step_2_clone:
+    name: "Clone & Reproduce"
+    owner: sg1-carter
+    coordinator: sg1-oneill
+    duration_days: [2, 3]
+    
+    tasks:
+      - name: "Environment Setup"
+        action: "Create isolated dev environment"
+        tools: [exec]
+      
+      - name: "Clone Repository"
+        action: "git clone to workstation"
+        tools: [exec]
+        command: "git clone {repo_url} {target_dir}"
+      
+      - name: "Install Dependencies"
+        action: "Install requirements"
+        tools: [exec]
+        commands:
+          - "pip install -r requirements.txt"
+          - "conda env create -f environment.yml"
+      
+      - name: "Run Examples"
+        action: "Execute basic examples"
+        tools: [exec]
+      
+      - name: "Verify Results"
+        action: "Compare outputs to expected"
+        tools: [read, reasoning]
+    
+    hardware:
+      cpu: "72 threads (Xeon)"
+      gpu: "RTX 3060 12GB"
+      ram: "62GB"
+      disk: "2TB+"
+    
+    outputs:
+      - "Working reproduction"
+      - "Environment configuration"
+      - "Initial modification notes"
+
+  step_3_integrate:
+    name: "Cloud Services Integration"
+    owner: sg1-carter
+    documenter: sg1-jackson
+    duration_days: [3, 5]
+    
+    cloud_services:
+      azure:
+        - name: "Azure OpenAI"
+          models: ["GPT-4", "GPT-4o", "DALL-E"]
+          integration: "REST API"
+        
+        - name: "Azure OCR"
+          use_case: "Document processing"
+          integration: "Computer Vision API"
+        
+        - name: "Azure ML"
+          use_case: "Model training/deployment"
+          integration: "Python SDK"
+        
+        - name: "Azure Blob Storage"
+          use_case: "File storage"
+          integration: "Python SDK"
+        
+        - name: "Azure Cognitive Services"
+          use_case: "Speech, Vision"
+          integration: "REST API"
+      
+      gcp:
+        - name: "Gemini"
+          use_case: "LLM inference"
+          integration: "Vertex AI API"
+        
+        - name: "Vertex AI"
+          use_case: "ML platform"
+          integration: "Python SDK"
+        
+        - name: "Cloud Vision"
+          use_case: "Image analysis"
+          integration: "REST API"
+        
+        - name: "Cloud Storage"
+          use_case: "File storage"
+          integration: "gsutil, SDK"
+      
+      glean:
+        - name: "Glean Search"
+          use_case: "Enterprise search"
+          integration: "API"
+        
+        - name: "Glean AI"
+          use_case: "Knowledge extraction"
+          integration: "API"
+    
+    tasks:
+      - name: "API Integration"
+        action: "Connect cloud services"
+        tools: [exec, write]
+      
+      - name: "Credential Management"
+        action: "Secure key storage"
+        tools: [exec]
+        env_vars:
+          - "AZURE_OPENAI_API_KEY"
+          - "AZURE_OPENAI_ENDPOINT"
+          - "GOOGLE_APPLICATION_CREDENTIALS"
+          - "GLEAN_API_KEY"
+      
+      - name: "Cost Estimation"
+        action: "Estimate API costs"
+        tools: [reasoning]
+      
+      - name: "Performance Testing"
+        action: "Compare local vs cloud"
+        tools: [exec]
+    
+    outputs:
+      - "Modified codebase"
+      - "Cloud configuration files"
+      - "Cost analysis report"
+
+  step_4_secure:
+    name: "Security & Compliance Check"
+    owner: sg1-tealc
+    implementer: sg1-carter
+    duration_days: [1, 2]
+    
+    security_checks:
+      code_security:
+        tools:
+          - name: "bandit"
+            purpose: "Python security linter"
+            command: "bandit -r {source_dir}"
+          
+          - name: "semgrep"
+            purpose: "Static analysis"
+            command: "semgrep --config=auto {source_dir}"
+          
+          - name: "trufflehog"
+            purpose: "Secret detection"
+            command: "trufflehog git file://{repo_dir}"
+      
+      dependency_security:
+        tools:
+          - name: "safety"
+            purpose: "Dependency CVE check"
+            command: "safety check"
+          
+          - name: "pip-audit"
+            purpose: "Python dependency audit"
+            command: "pip-audit"
+          
+          - name: "npm audit"
+            purpose: "Node.js dependency audit"
+            command: "npm audit"
+      
+      api_security:
+        checks:
+          - "Key rotation implemented"
+          - "Rate limiting configured"
+          - "Encryption in transit"
+          - "No hardcoded secrets"
+      
+      data_security:
+        checks:
+          - "PII handling reviewed"
+          - "Data encryption at rest"
+          - "Access controls verified"
+    
+    compliance_checks:
+      data_privacy:
+        - "GDPR compliance"
+        - "CCPA compliance"
+      
+      licensing:
+        - "License compatibility check"
+        - "Attribution requirements"
+      
+      access_control:
+        - "Authentication verified"
+        - "Authorization tested"
+    
+    workflow:
+      - step: 1
+        action: "Teal'C runs automated scans"
+        owner: sg1-tealc
+      
+      - step: 2
+        action: "Teal'C reviews findings"
+        owner: sg1-tealc
+        categorize: ["Critical", "High", "Medium", "Low"]
+      
+      - step: 3
+        action: "Carter implements fixes"
+        owner: sg1-carter
+      
+      - step: 4
+        action: "Teal'C re-verifies"
+        owner: sg1-tealc
+        sign_off: true
+    
+    outputs:
+      - "Security audit report"
+      - "Remediation actions"
+      - "Compliance checklist"
+
+  step_5_publish:
+    name: "Publish & Communicate"
+    owner: sg1-jackson
+    reviewer: sg1-oneill
+    duration_days: [2, 3]
+    
+    outputs:
+      blog_post:
+        sections:
+          - "Introduction"
+          - "Background"
+          - "Implementation"
+          - "Results"
+          - "Lessons"
+          - "Conclusion"
+        platforms:
+          - "Internal blog"
+          - "Medium"
+          - "Dev.to"
+      
+      presentation:
+        slides:
+          - "Title"
+          - "Problem"
+          - "Solution"
+          - "Demo"
+          - "Results"
+          - "Next Steps"
+        formats:
+          - "PowerPoint"
+          - "Google Slides"
+          - "Reveal.js"
+        audience: "Colleagues, team"
+      
+      academic_article:
+        sections:
+          - "Abstract"
+          - "Introduction"
+          - "Related Work"
+          - "Methodology"
+          - "Experiments"
+          - "Discussion"
+          - "Conclusion"
+          - "References"
+        format: "LaTeX or Markdown"
+        audience: "Academic associations, conferences"
+    
+    tools:
+      - write
+      - read
+      - edit
+      - exec (pandoc)
+      - browser
+
+  step_6_learn:
+    name: "Lessons Learned & Skill Creation"
+    owner: sg1-oneill
+    contributors: [sg1-jackson, sg1-carter, sg1-tealc]
+    duration_days: 1
+    
+    knowledge_extraction:
+      lessons_learned:
+        categories:
+          - "What Worked"
+          - "What Didn't"
+          - "Surprises"
+          - "Best Practices"
+          - "Tool Improvements"
+    
+    skill_creation:
+      structure:
+        base_path: "~/.openclaw/workspace/skills/"
+        files:
+          - "SKILL.md"
+          - "scripts/"
+          - "templates/"
+          - "examples/"
+      
+      skill_types:
+        - name: "Workflow Skill"
+          description: "Multi-step process"
+          example: "ai-repo-analysis"
+        
+        - name: "Tool Skill"
+          description: "Tool wrapper"
+          example: "azure-openai-integration"
+        
+        - name: "Template Skill"
+          description: "Document templates"
+          example: "blog-post-template"
+        
+        - name: "Checklist Skill"
+          description: "Verification lists"
+          example: "security-checklist"
+    
+    example_skills:
+      - "ai-repo-research"
+      - "cloud-integration"
+      - "security-audit"
+      - "blog-publish"
+      - "skill-creator"
+    
+    outputs:
+      - "Lessons learned document"
+      - "New skill packages"
+      - "Updated agent configurations"
+
+# Agent Assignments Summary
+agent_assignments:
+  sg1-oneill:
+    role: "Team Leader"
+    primary_steps: [6]
+    coordination_steps: [1, 2, 3, 4, 5]
+    responsibilities:
+      - "Task prioritization"
+      - "Team coordination"
+      - "Final review"
+      - "Lessons extraction"
+      - "Skill creation"
+  
+  sg1-carter:
+    role: "Developer/Engineer"
+    primary_steps: [2, 3]
+    support_steps: [4]
+    responsibilities:
+      - "Clone and reproduce"
+      - "Cloud integration"
+      - "Security fixes"
+      - "Technical implementation"
+  
+  sg1-jackson:
+    role: "Writer/Researcher"
+    primary_steps: [1, 5]
+    support_steps: [3]
+    responsibilities:
+      - "Research and discovery"
+      - "Blog writing"
+      - "Presentation creation"
+      - "Academic article drafting"
+  
+  sg1-tealc:
+    role: "Security Specialist"
+    primary_steps: [4]
+    responsibilities:
+      - "Security audits"
+      - "Compliance checks"
+      - "Code review"
+      - "Final sign-off"
+
+# Resource Configuration
+resources:
+  sgc_command:
+    ip: "116.147.146.109"
+    hardware:
+      cpu: "Xeon 72 threads"
+      gpu: "RTX 3060 12GB"
+      ram: "62GB"
+      disk: "2TB+"
+    
+    workspaces:
+      oneill: "~/.openclaw/workspace"
+      carter: "~/.openclaw/workspace-developer"
+      jackson: "~/.openclaw/workspace-writer"
+      tealc: "~/.openclaw/workspace-security"
+    
+    skills_path: "~/.openclaw/workspace/skills/"
+
+# Metrics
+metrics:
+  step_durations:
+    step_1: "1-2 days"
+    step_2: "2-3 days"
+    step_3: "3-5 days"
+    step_4: "1-2 days"
+    step_5: "2-3 days"
+    step_6: "1 day"
+    total: "10-16 days per project"
+  
+  success_criteria:
+    - "All security checks passed"
+    - "Documentation complete"
+    - "Skills created"
+    - "Knowledge archived"

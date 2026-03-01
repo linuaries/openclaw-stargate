@@ -1,7 +1,7 @@
 #!/bin/bash
 # 📊 SG1 Team Status Check Script
-# Displays status of all SG1 team gateways
-# 
+# Displays status of all SG1 team gateways via systemd
+#
 # Usage:
 #   ./sg1-status.sh          # Show status overview
 #   ./sg1-status.sh -v       # Verbose mode with details
@@ -20,9 +20,9 @@ NC='\033[0m' # No Color
 # SG1 Team Configuration
 declare -A PROFILES=(
     ["oneill"]="18789"
-    ["carter"]="18790"
-    ["jackson"]="18791"
-    ["tealc"]="18792"
+    ["carter"]="18799"
+    ["jackson"]="18809"
+    ["tealc"]="18819"
 )
 
 declare -A ROLES=(
@@ -51,35 +51,54 @@ check_gateway() {
     local port="${PROFILES[$profile]}"
     local role="${ROLES[$profile]}"
     local emoji="${EMOJI[$profile]}"
-    
-    local pid=$(lsof -t -i ":$port" 2>/dev/null || true)
-    
-    if [ -n "$pid" ]; then
+    local service_name="openclaw-gateway-${profile}.service"
+
+    # Check via systemd first
+    if systemctl --user is-active --quiet "$service_name" 2>/dev/null; then
+        local pid
+        pid=$(systemctl --user show "$service_name" --property=MainPID --value)
+
         echo -e "${GREEN}●${NC} ${emoji} ${profile^}"
         echo -e "   Role: ${role}"
         echo -e "   Port: ${port}"
         echo -e "   PID:  ${pid}"
-        
+
         if [ "$VERBOSE" = true ]; then
             # Memory usage
-            local mem=$(ps -p "$pid" -o %mem --no-headers 2>/dev/null | tr -d ' ' || echo "N/A")
+            local mem
+            mem=$(ps -p "$pid" -o %mem --no-headers 2>/dev/null | tr -d ' ' || echo "N/A")
             echo -e "   Mem:  ${mem}%"
-            
+
             # CPU usage
-            local cpu=$(ps -p "$pid" -o %cpu --no-headers 2>/dev/null | tr -d ' ' || echo "N/A")
+            local cpu
+            cpu=$(ps -p "$pid" -o %cpu --no-headers 2>/dev/null | tr -d ' ' || echo "N/A")
             echo -e "   CPU:  ${cpu}%"
-            
+
             # Uptime
-            local uptime=$(ps -p "$pid" -o etime --no-headers 2>/dev/null | tr -d ' ' || echo "N/A")
+            local uptime
+            uptime=$(systemctl --user show "$service_name" --property=ActiveEnterTimestamp --value | sed 's/T/ /' | cut -d' ' -f1-2)
             echo -e "   Up:   ${uptime}"
         fi
         return 0
     else
-        echo -e "${RED}○${NC} ${emoji} ${profile^}"
-        echo -e "   Role: ${role}"
-        echo -e "   Port: ${port}"
-        echo -e "   Status: ${RED}OFFLINE${NC}"
-        return 1
+        # Fallback to port check
+        local pid
+        pid=$(lsof -t -i ":$port" 2>/dev/null || true)
+
+        if [ -n "$pid" ]; then
+            echo -e "${YELLOW}●${NC} ${emoji} ${profile^}"
+            echo -e "   Role: ${role}"
+            echo -e "   Port: ${port}"
+            echo -e "   PID:  ${pid}"
+            echo -e "   Status: ${YELLOW}Running (not via systemd)${NC}"
+            return 0
+        else
+            echo -e "${RED}○${NC} ${emoji} ${profile^}"
+            echo -e "   Role: ${role}"
+            echo -e "   Port: ${port}"
+            echo -e "   Status: ${RED}OFFLINE${NC}"
+            return 1
+        fi
     fi
 }
 
@@ -91,16 +110,16 @@ echo "║              SGC Command - GPU Workstation                     ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# Counters
-local online=0
-local offline=0
+# Counters (fixed: removed 'local' keyword)
+online=0
+offline=0
 
 # Check each gateway
 for profile in oneill carter jackson tealc; do
     if check_gateway "$profile"; then
-        ((online++))
+        ((online++)) || true
     else
-        ((offline++))
+        ((offline++)) || true
     fi
     echo ""
 done

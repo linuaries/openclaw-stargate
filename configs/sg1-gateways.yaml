@@ -51,7 +51,7 @@ gateways:
   # 🔬 Samantha Carter - Developer/Engineer
   carter:
     profile: carter
-    port: 18790
+    port: 18799
     agent: sg1-carter
     role: "Developer / Engineer"
     workspace: ~/.openclaw/workspace-developer
@@ -76,7 +76,7 @@ gateways:
   # 📚 Daniel Jackson - Writer/Researcher
   jackson:
     profile: jackson
-    port: 18791
+    port: 18809
     agent: sg1-jackson
     role: "Writer / Researcher"
     workspace: ~/.openclaw/workspace-writer
@@ -100,7 +100,7 @@ gateways:
   # 🛡️ Teal'C - Security Specialist
   tealc:
     profile: tealc
-    port: 18792
+    port: 18819
     agent: sg1-tealc
     role: "Security Specialist / QA"
     workspace: ~/.openclaw/workspace-security

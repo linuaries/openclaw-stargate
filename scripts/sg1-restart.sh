@@ -19,9 +19,9 @@ NC='\033[0m'
 # SG1 Team Configuration
 declare -A PROFILES=(
     ["oneill"]="18789"
-    ["carter"]="18790"
-    ["jackson"]="18791"
-    ["tealc"]="18792"
+    ["carter"]="18799"
+    ["jackson"]="18809"
+    ["tealc"]="18819"
 )
 
 # Function to restart a single gateway

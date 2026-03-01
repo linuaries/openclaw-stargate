@@ -1,0 +1,139 @@
+// Azure OpenAI Provider Configuration for OpenClaw
+// Copy relevant sections to ~/.openclaw/openclaw.json
+// Author: Maj. Samantha Carter, SGC-Command
+
+{
+  // ========================================
+  // Environment Variables (put in ~/.openclaw/.env)
+  // ========================================
+  // AZURE_OPENAI_API_KEY=your-api-key-here
+  // AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+  // AZURE_OPENAI_DEPLOYMENT=gpt-4o-deployment
+
+  // ========================================
+  // Inline Environment (alternative)
+  // ========================================
+  env: {
+    AZURE_OPENAI_API_KEY: "your-api-key-here", // Replace with actual key
+  },
+
+  // ========================================
+  // Custom Provider Configuration
+  // ========================================
+  models: {
+    mode: "merge",
+    providers: {
+      azure: {
+        // Your Azure OpenAI resource endpoint
+        baseUrl: "https://your-resource.openai.azure.com",
+        
+        // API key (from env or inline)
+        apiKey: "${AZURE_OPENAI_API_KEY}",
+        
+        // Use OpenAI-compatible API
+        api: "openai-completions",
+        
+        // Azure requires api-key header (not Bearer token)
+        headers: {
+          "api-key": "${AZURE_OPENAI_API_KEY}",
+        },
+        
+        // API version is required for Azure
+        params: {
+          "api-version": "2024-12-01-preview",
+        },
+        
+        // Model catalog - adjust to match your deployments
+        models: [
+          {
+            id: "gpt-4o",
+            name: "GPT-4o (Azure)",
+            reasoning: true,
+            input: ["text", "image"],
+            contextWindow: 128000,
+            maxTokens: 16384,
+          },
+          {
+            id: "gpt-4o-mini",
+            name: "GPT-4o Mini (Azure)",
+            reasoning: false,
+            input: ["text", "image"],
+            contextWindow: 128000,
+            maxTokens: 16384,
+          },
+        ],
+      },
+      
+      // Optional: Backup Azure deployment in different region
+      azure-backup: {
+        baseUrl: "https://your-resource-backup.openai.azure.com",
+        apiKey: "${AZURE_OPENAI_API_KEY}",
+        api: "openai-completions",
+        headers: {
+          "api-key": "${AZURE_OPENAI_API_KEY}",
+        },
+        params: {
+          "api-version": "2024-12-01-preview",
+        },
+        models: [
+          {
+            id: "gpt-4o",
+            name: "GPT-4o (Azure Backup)",
+            reasoning: true,
+            input: ["text", "image"],
+            contextWindow: 128000,
+            maxTokens: 16384,
+          },
+        ],
+      },
+    },
+  },
+
+  // ========================================
+  // Agent Model Configuration
+  // ========================================
+  agents: {
+    defaults: {
+      model: {
+        // Keep your current primary model
+        primary: "zai/glm-5",
+        
+        // Azure as first fallback, then others
+        fallbacks: [
+          "azure/gpt-4o",
+          "azure-backup/gpt-4o",  // Optional: regional backup
+          "moonshot/kimi-k2.5",
+          "openai/gpt-4o-mini",
+        ],
+      },
+      
+      // Optional: Image model configuration
+      imageModel: {
+        primary: "azure/gpt-4o",
+        fallbacks: ["openai/gpt-4o"],
+      },
+      
+      // Model aliases for easier switching
+      models: {
+        "zai/glm-5": { alias: "GLM-5" },
+        "azure/gpt-4o": { alias: "Azure-GPT4o" },
+        "azure/gpt-4o-mini": { alias: "Azure-GPT4oMini" },
+        "moonshot/kimi-k2.5": { alias: "Kimi" },
+      },
+    },
+  },
+
+  // ========================================
+  // Auth Cooldown Configuration (optional)
+  // ========================================
+  auth: {
+    cooldowns: {
+      // Backoff for billing errors (insufficient credits, etc.)
+      billingBackoffHours: 5,
+      billingMaxHours: 24,
+      
+      // Window for resetting error counts
+      failureWindowHours: 24,
+    },
+  },
+}

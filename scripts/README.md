@@ -46,6 +46,14 @@ This creates:
 - `~/.openclaw-tealc/` - Teal'C profile directory
 - Workspace directories for each agent
 
+# Create config files for each profile
+## Copy your base config and add unique Discord bot tokens
+```bash
+cp ~/.openclaw/openclaw.json ~/.openclaw-oneill/openclaw.json
+cp ~/.openclaw/openclaw.json ~/.openclaw-carter/openclaw.json
+cp ~/.openclaw/openclaw.json ~/.openclaw-jackson/openclaw.json
+cp ~/.openclaw/openclaw.json ~/.openclaw-tealc/openclaw.json
+```
 ### sg1-start.sh
 
 Starts gateways.
@@ -140,9 +148,9 @@ Restarts gateways.
 | Agent | Profile | Port |
 |-------|---------|------|
 | Jack O'Neill | `oneill` | 18789 |
-| Samantha Carter | `carter` | 18790 |
-| Daniel Jackson | `jackson` | 18791 |
-| Teal'C | `tealc` | 18792 |
+| Samantha Carter | `carter` | 18799 |
+| Daniel Jackson | `jackson` | 18809 |
+| Teal'C | `tealc` | 18819 |
 
 ### Profile Directories
 

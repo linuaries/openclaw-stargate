@@ -1,7 +1,7 @@
 #!/bin/bash
 # 🛑 SG1 Team Gateway Stop Script
-# Stops SG1 team gateways gracefully
-# 
+# Stops SG1 team gateways via systemd
+#
 # Usage:
 #   ./sg1-stop.sh          # Stop all gateways
 #   ./sg1-stop.sh oneill   # Stop specific gateway
@@ -20,44 +20,51 @@ NC='\033[0m' # No Color
 # SG1 Team Configuration
 declare -A PROFILES=(
     ["oneill"]="18789"
-    ["carter"]="18790"
-    ["jackson"]="18791"
-    ["tealc"]="18792"
+    ["carter"]="18799"
+    ["jackson"]="18809"
+    ["tealc"]="18819"
 )
 
 # Function to stop a single gateway
 stop_gateway() {
     local profile="$1"
     local port="${PROFILES[$profile]}"
-    
+    local service_name="openclaw-gateway-${profile}.service"
+
     echo -e "${CYAN}Stopping ${profile^} (port ${port})...${NC}"
-    
-    # Find process by port
-    local pid=$(lsof -t -i ":$port" 2>/dev/null || true)
-    
-    if [ -z "$pid" ]; then
-        echo -e "${YELLOW}⚠️  ${profile^} is not running on port ${port}${NC}"
+
+    # Check if service exists
+    if ! systemctl --user list-unit-files | grep -q "${service_name}"; then
+        # Service not installed, check if port is in use
+        if lsof -i ":$port" >/dev/null 2>&1; then
+            echo -e "${YELLOW}   No systemd service found, but port ${port} is in use.${NC}"
+            echo -e "${YELLOW}   Killing process on port ${port}...${NC}"
+            local pid=$(lsof -t -i ":$port" 2>/dev/null || true)
+            if [ -n "$pid" ]; then
+                kill -TERM "$pid" 2>/dev/null || true
+                sleep 2
+                kill -KILL "$pid" 2>/dev/null || true
+            fi
+            echo -e "${GREEN}✅ ${profile^} stopped${NC}"
+        else
+            echo -e "${YELLOW}⚠️  ${profile^} is not running on port ${port}${NC}"
+        fi
         return 0
     fi
-    
-    # Try graceful shutdown first
-    kill -TERM "$pid" 2>/dev/null || true
-    
-    # Wait up to 5 seconds for graceful shutdown
-    local count=0
-    while kill -0 "$pid" 2>/dev/null && [ $count -lt 5 ]; do
-        sleep 1
-        ((count++))
-        echo -e "   Waiting for ${profile^} to stop... (${count}s)"
-    done
-    
-    # Force kill if still running
-    if kill -0 "$pid" 2>/dev/null; then
-        echo -e "${YELLOW}   Force killing ${profile^}...${NC}"
-        kill -KILL "$pid" 2>/dev/null || true
+
+    # Check if service is active
+    if ! systemctl --user is-active --quiet "$service_name"; then
+        echo -e "${YELLOW}⚠️  ${profile^} is not running${NC}"
+        return 0
     fi
-    
-    echo -e "${GREEN}✅ ${profile^} stopped${NC}"
+
+    # Stop via systemd
+    if systemctl --user stop "$service_name" 2>/dev/null; then
+        echo -e "${GREEN}✅ ${profile^} stopped${NC}"
+    else
+        echo -e "${RED}❌ Failed to stop ${profile^}${NC}"
+        return 1
+    fi
 }
 
 # Function to stop all gateways
@@ -67,12 +74,12 @@ stop_all() {
     echo "║           🛑 SG-1 Team Shutdown Sequence                       ║"
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    
+
     # Stop in reverse order (Teal'C first, O'Neill last - leader stays till end)
     for profile in tealc jackson carter oneill; do
         stop_gateway "$profile"
     done
-    
+
     echo ""
     echo -e "${GREEN}✅ SG-1 Team shutdown complete${NC}"
 }

@@ -1,0 +1,4 @@
+Gateway service disabled.
+Start with: openclaw --profile oneill gateway install
+Start with: openclaw --profile oneill gateway
+Start with: systemctl --user start openclaw-gateway-oneill.service

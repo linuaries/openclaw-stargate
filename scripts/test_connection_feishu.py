@@ -27,8 +27,8 @@ event_handler = (
 
 def main():
     cli = lark.ws.Client(
-        "cli_a929b53779b85cd6",
-        "FrdvYMs5cvOCrpV0upYyUcUGS7KHEbTD",
+        "cli_a92ce54ec9381ceb",
+        "OJMMLlrFshROMp1PFNhJodgC8PGjNwA0",
         event_handler=event_handler,
         log_level=lark.LogLevel.DEBUG,
     )

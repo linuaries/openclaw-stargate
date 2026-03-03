@@ -1,0 +1,31 @@
+{
+  "scopes": {
+    "tenant": [
+      "contact:contact.base:readonly",
+      "aily:message:read",
+      "aily:message:write",
+      "application:application.app_message_stats.overview:readonly",
+      "im:app_feed_card:write",
+      "im:message",
+      "im:message.group_at_msg:readonly",
+      "im:message.group_msg",
+      "im:message.p2p_msg:readonly",
+      "im:message.pins:read",
+      "im:message.pins:write_only",
+      "im:message.reactions:read",
+      "im:message.reactions:write_only",
+      "im:message.urgent",
+      "im:message.urgent.status:write",
+      "im:message.urgent:phone",
+      "im:message.urgent:sms",
+      "im:message:readonly",
+      "im:message:recall",
+      "im:message:send_as_bot",
+      "im:message:send_multi_depts",
+      "im:message:send_multi_users",
+      "im:message:send_sys_msg",
+      "im:message:update"
+    ],
+    "user": []
+  }
+}

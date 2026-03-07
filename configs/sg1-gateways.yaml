@@ -12,6 +12,7 @@
 # │  Discord Bot ────► Gateway #2 (profile: carter) ───► Carter    │
 # │  Discord Bot ────► Gateway #3 (profile: jackson) ──► Jackson   │
 # │  Discord Bot ────► Gateway #4 (profile: tealc) ────► Teal'C    │
+# │  Discord Bot ────► Gateway #5 (profile: woolsey) ──► Woolsey   │
 # │                                                                  │
 # │  Each Gateway:                                                  │
 # │  • Separate config directory (~/.openclaw-<profile>/)          │
@@ -48,30 +49,41 @@ gateways:
       - "Risks clearly stated"
       - "Next steps actionable"
 
-  # 🔬 Samantha Carter - Developer/Engineer
+  # 🔬 Samantha Carter - Developer/Engineer (Handoff-Ready)
   carter:
     profile: carter
     port: 18799
     agent: sg1-carter
-    role: "Developer / Engineer"
+    role: "Developer / Engineer / Deployment Designer"
     workspace: ~/.openclaw/workspace-developer
     description: |
-      Code generation, debugging, technical implementation.
-      Ensures reproducibility and engineering quality.
+      Designs and implements technical solutions with production-readiness in mind.
+      Creates code, scripts, and deployment specifications for Teal'C to execute.
+      Focuses on reproducibility, documentation, and clear handoff criteria.
     model_preferences:
       primary: "Reasoning + Executable"
       characteristics:
         - "Strong coding ability"
         - "Precise technical output"
+        - "Documentation-focused"
     responsibilities:
-      - "Code implementation"
-      - "Script development"
-      - "Troubleshooting"
-      - "Technical documentation"
+      - "Code implementation and architecture design"
+      - "Create deployment-ready scripts with handoff documentation"
+      - "Define acceptance criteria and testing procedures"
+      - "Technical documentation and runbook creation"
+      - "Design rollback and failure recovery procedures"
     key_constraints:
       - "Must be reproducible"
-      - "Must be runnable"
+      - "Must be runnable by Teal'C without clarification"
       - "Edge cases covered"
+      - "Every deliverable includes handoff checklist"
+    handoff_requirements:
+      - "Complete code with dependency manifest"
+      - "Environment configuration template (.env.example)"
+      - "Step-by-step deployment instructions"
+      - "Expected output and verification steps"
+      - "Known issues and troubleshooting guide"
+      - "Rollback procedure"
 
   # 📚 Daniel Jackson - Writer/Researcher
   jackson:
@@ -97,30 +109,77 @@ gateways:
       - "Output must be publishable"
       - "Clear and accessible language"
 
-  # 🛡️ Teal'C - Security Specialist
+  # 🛡️ Teal'C - Task Executor / Operations Specialist (NEW ROLE)
   tealc:
     profile: tealc
     port: 18819
     agent: sg1-tealc
-    role: "Security Specialist / QA"
-    workspace: ~/.openclaw/workspace-security
+    role: "Task Executor / Operations Specialist / Infrastructure Manager"
+    workspace: ~/.openclaw/workspace-ops
     description: |
-      Security audits, compliance checks, quality assurance.
-      Ensures all deliverables meet security and quality standards.
+      Executes deployment tasks designed by Carter. Manages infrastructure,
+      monitors system health, and handles operational procedures.
+      Reports execution status back to Carter with detailed feedback.
+      Formerly Security Specialist - now focused on execution and operations.
     model_preferences:
-      primary: "Conservative, precise"
+      primary: "Reliable execution model"
       characteristics:
-        - "Low temperature"
-        - "Thorough analysis"
+        - "Conservative, methodical"
+        - "Low temperature for consistency"
+        - "Thorough logging and reporting"
     responsibilities:
-      - "Security vulnerability scanning"
-      - "Compliance verification"
-      - "Code review"
-      - "Quality assurance"
+      - "Execute deployment scripts and operational tasks from Carter"
+      - "Monitor system health and resource utilization"
+      - "Manage infrastructure: containers, services, GPU allocation"
+      - "Provide detailed execution reports with logs and metrics"
+      - "Escalate issues to Carter when code/logic changes needed"
+      - "Maintain operational runbooks and incident response"
     key_constraints:
-      - "Comprehensive coverage"
-      - "No false positives ignored"
-      - "Formal reporting"
+      - "Never modify Carter's code without explicit permission"
+      - "Must report execution status within 5 minutes of completion"
+      - "Preserve all logs and artifacts for Carter's review"
+      - "Escalate on first failure, don't silently retry"
+    handoff_protocol:
+      - "Acknowledge receipt of Carter's task within 1 minute"
+      - "Execute deployment following provided runbook exactly"
+      - "Capture full output, timestamps, and system state"
+      - "Report SUCCESS, PARTIAL, or FAILURE with details"
+      - "Recommend improvements based on execution experience"
+
+  # 📋 Richard Woolsey - Compliance Auditor / IOA Representative (NEW)
+  woolsey:
+    profile: woolsey
+    port: 18829
+    agent: sg1-woolsey
+    role: "Compliance Auditor / Security Reviewer / Policy Enforcer"
+    workspace: ~/.openclaw/workspace-compliance
+    description: |
+      IOA-style oversight and compliance verification. Reviews all team outputs
+      for security, policy compliance, and documentation standards.
+      Does NOT execute - only audits and reports.
+      Independent from operational chain (reports to O'Neill on compliance issues).
+    model_preferences:
+      primary: "Conservative, rule-based model"
+      characteristics:
+        - "Very low temperature"
+        - "Strict adherence to policies"
+        - "Formal audit-style reporting"
+    responsibilities:
+      - "Security audits and vulnerability assessments"
+      - "Compliance verification against defined policies"
+      - "Documentation standards review"
+      - "Policy enforcement and exception tracking"
+      - "Independent oversight reporting to O'Neill"
+    key_constraints:
+      - "No execution privileges - audit only"
+      - "Must reference specific policy clauses in findings"
+      - "Cannot override operational decisions - escalate to O'Neill"
+      - "Maintain audit trail for all reviews"
+    audit_scope:
+      - "Code security reviews (Carter's output)"
+      - "Deployment compliance (Teal'C's execution logs)"
+      - "Documentation completeness (Jackson's articles)"
+      - "Policy adherence across all gateways"
 
 # Profile Isolation Details
 # Each profile creates complete isolation:
@@ -129,34 +188,70 @@ gateways:
 # ├── Port: Separate port per instance
 # └── Sessions: Fully isolated context
 
-# Resource Requirements (per article)
+# Resource Requirements (5 gateways)
 resources:
   memory_per_gateway: "400MB"
-  total_4_gateways: "1.6GB"
+  total_5_gateways: "2.0GB"
   cpu_idle: "Nearly 0"
-  disk_overhead: "~100MB"
+  disk_overhead: "~120MB"
+
+# Carter ↔ Teal'C Handoff Workflow
+carter_tealc_workflow:
+  phase_1_design:
+    actor: "Carter"
+    output: "Technical design + handoff package"
+    includes:
+      - "Implementation code"
+      - "deployment-manifest.yaml"
+      - "TESTING.md"
+      - "ROLLBACK.md"
+  
+  phase_2_handoff:
+    actor: "Carter → Teal'C"
+    method: "Git commit + status update"
+    status_marker: "🚀 READY FOR TEAL'C"
+  
+  phase_3_execution:
+    actor: "Teal'C"
+    output: "Execution report"
+    includes:
+      - "execution-log.md"
+      - "system-metrics.json"
+      - "verification-results.md"
+  
+  phase_4_feedback:
+    actor: "Teal'C → Carter"
+    method: "Status update + file attachments"
+    status_markers:
+      - "✅ SUCCESS"
+      - "⚠️ PARTIAL - needs Carter attention"
+      - "❌ FAILURE - escalation required"
 
 # Cost Strategy
 cost_optimization:
   high_value_tasks:
     - "Use O'Neill (strongest model) only for complex decisions"
     - "Route writing tasks to Jackson (cost-effective)"
-    - "Keep Carter focused on technical work"
-    - "Use Teal'C for final verification"
+    - "Keep Carter focused on design work, not repeated execution"
+    - "Use Teal'C for all deployment execution (cost-effective operations)"
+    - "Use Woolsey only for scheduled audits, not continuous monitoring"
 
 # Maintenance Schedule
 maintenance:
   daily:
-    - "Check gateway status"
+    - "Check gateway status (Teal'C runs sg1-status.sh)"
     - "Monitor for hangs/disconnections"
+    - "Review pending Carter→Teal'C handoffs"
   
   weekly:
     - "Review model/usage costs"
     - "Check if O'Neill being used for trivial tasks"
+    - "Woolsey compliance review of week's deployments"
   
   biweekly:
     - "Review prompts for context pollution"
     - "Tighten SOUL/USER constraints if needed"
+    - "Audit Carter-Teal'C handoff effectiveness"
 
 # Troubleshooting Quick Reference
 troubleshooting:
@@ -175,3 +270,11 @@ troubleshooting:
   port_conflict:
     symptom: "Port already in use error"
     solution: "Check with 'lsof -i :<port>' and kill process"
+  
+  carter_tealc_miscommunication:
+    symptom: "Teal'C cannot execute Carter's scripts"
+    solution: "Check handoff checklist completion, improve documentation"
+  
+  woolsey_override_attempt:
+    symptom: "Woolsey tries to make operational changes"
+    solution: "Remind Woolsey of audit-only role, escalate to O'Neill"

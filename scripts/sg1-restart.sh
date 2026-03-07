@@ -22,6 +22,7 @@ declare -A PROFILES=(
     ["carter"]="18799"
     ["jackson"]="18809"
     ["tealc"]="18819"
+    ["woolsey"]="18829"
 )
 
 # Function to restart a single gateway
@@ -74,7 +75,7 @@ elif [ $# -eq 1 ]; then
 else
     echo "Usage: $0 [profile]"
     echo "  No argument: Restart all SG1 gateways"
-    echo "  profile: Restart specific gateway (oneill|carter|jackson|tealc)"
+    echo "  profile: Restart specific gateway (oneill|carter|jackson|tealc|woolsey)"
     exit 1
 fi
 

@@ -23,6 +23,7 @@ declare -A PROFILES=(
     ["carter"]="18799"
     ["jackson"]="18809"
     ["tealc"]="18819"
+    ["woolsey"]="18829"
 )
 
 # Function to stop a single gateway
@@ -75,8 +76,8 @@ stop_all() {
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
 
-    # Stop in reverse order (Teal'C first, O'Neill last - leader stays till end)
-    for profile in tealc jackson carter oneill; do
+    # Stop in reverse order (Woolsey first, O'Neill last - leader stays till end)
+    for profile in woolsey tealc jackson carter oneill; do
         stop_gateway "$profile"
     done
 
@@ -99,6 +100,6 @@ elif [ $# -eq 1 ]; then
 else
     echo "Usage: $0 [profile]"
     echo "  No argument: Stop all SG1 gateways"
-    echo "  profile: Stop specific gateway (oneill|carter|jackson|tealc)"
+    echo "  profile: Stop specific gateway (oneill|carter|jackson|tealc|woolsey)"
     exit 1
 fi

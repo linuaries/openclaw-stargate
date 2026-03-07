@@ -23,13 +23,15 @@ declare -A PROFILES=(
     ["carter"]="18799"
     ["jackson"]="18809"
     ["tealc"]="18819"
+    ["woolsey"]="18829"
 )
 
 declare -A ROLES=(
     ["oneill"]="Team Leader"
     ["carter"]="Developer"
     ["jackson"]="Writer"
-    ["tealc"]="Security"
+    ["tealc"]="Ops Specialist"
+    ["woolsey"]="Auditor"
 )
 
 declare -A EMOJI=(
@@ -37,6 +39,7 @@ declare -A EMOJI=(
     ["carter"]="🔬"
     ["jackson"]="📚"
     ["tealc"]="🛡️"
+    ["woolsey"]="📋"
 )
 
 # Verbose mode
@@ -115,7 +118,7 @@ online=0
 offline=0
 
 # Check each gateway
-for profile in oneill carter jackson tealc; do
+for profile in oneill carter jackson tealc woolsey; do
     if check_gateway "$profile"; then
         ((online++)) || true
     else

@@ -23,13 +23,15 @@ declare -A PROFILES=(
     ["carter"]="18799"
     ["jackson"]="18809"
     ["tealc"]="18819"
+    ["woolsey"]="18829"
 )
 
 declare -A ROLES=(
     ["oneill"]="🎖️ Team Leader"
-    ["carter"]="🔬 Developer/Engineer"
+    ["carter"]="🔬 Developer/Deployment Designer"
     ["jackson"]="📚 Writer/Researcher"
-    ["tealc"]="🛡️ Security Specialist"
+    ["tealc"]="🛡️ Task Executor/Ops Specialist"
+    ["woolsey"]="📋 Compliance Auditor"
 )
 
 # Script directory
@@ -132,7 +134,7 @@ start_all() {
     local success_count=0
     local fail_count=0
 
-    for profile in oneill carter jackson tealc; do
+    for profile in oneill carter jackson tealc woolsey; do
         port="${PROFILES[$profile]}"
         if start_gateway "$profile" "$port"; then
             ((success_count++)) || true
@@ -156,7 +158,7 @@ start_all() {
     echo -e "Use ${CYAN}./sg1-logs.sh${NC} to view logs"
     echo ""
 
-    if [ $success_count -eq 4 ]; then
+    if [ $success_count -eq 5 ]; then
         echo -e "${GREEN}🚀 SG-1, you have a go! Chevron 7 encoded!${NC}"
     fi
 }
@@ -177,6 +179,6 @@ elif [ $# -eq 1 ]; then
 else
     echo "Usage: $0 [profile]"
     echo "  No argument: Start all SG1 gateways"
-    echo "  profile: Start specific gateway (oneill|carter|jackson|tealc)"
+    echo "  profile: Start specific gateway (oneill|carter|jackson|tealc|woolsey)"
     exit 1
 fi

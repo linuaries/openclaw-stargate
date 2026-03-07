@@ -22,9 +22,10 @@ NC='\033[0m' # No Color
 # SG1 Team Configuration
 declare -A PROFILES=(
     ["oneill"]="18789"
-    ["carter"]="18790"
-    ["jackson"]="18791"
-    ["tealc"]="18792"
+    ["carter"]="18799"
+    ["jackson"]="18809"
+    ["tealc"]="18819"
+    ["woolsey"]="18829"
 )
 
 # Script directory
@@ -37,6 +38,7 @@ declare -A LOG_COLORS=(
     ["carter"]="$BLUE"
     ["jackson"]="$YELLOW"
     ["tealc"]="$PURPLE"
+    ["woolsey"]="$CYAN"
 )
 
 # Follow mode
@@ -50,7 +52,7 @@ while [ $# -gt 0 ]; do
             FOLLOW=true
             shift
             ;;
-        oneill|carter|jackson|tealc)
+        oneill|carter|jackson|tealc|woolsey)
             PROFILE="$1"
             shift
             ;;
@@ -58,7 +60,7 @@ while [ $# -gt 0 ]; do
             echo -e "${RED}Unknown option: $1${NC}"
             echo "Usage: $0 [-f] [profile]"
             echo "  -f: Follow mode (tail -f)"
-            echo "  profile: oneill|carter|jackson|tealc"
+            echo "  profile: oneill|carter|jackson|tealc|woolsey"
             exit 1
             ;;
     esac
@@ -107,6 +109,8 @@ show_all_logs() {
                 echo -e "${YELLOW}[Jackson]${NC} $line"
             elif [[ "$line" == *"tealc"* ]]; then
                 echo -e "${PURPLE}[Teal'C]${NC} $line"
+            elif [[ "$line" == *"woolsey"* ]]; then
+                echo -e "${CYAN}[Woolsey]${NC} $line"
             else
                 echo "$line"
             fi
@@ -118,7 +122,7 @@ show_all_logs() {
         echo "╚════════════════════════════════════════════════════════════════╝"
         echo -e "${NC}"
         
-        for profile in oneill carter jackson tealc; do
+        for profile in oneill carter jackson tealc woolsey; do
             show_logs "$profile"
         done
     fi
